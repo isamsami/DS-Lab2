@@ -8,6 +8,12 @@ import java.rmi.server.ServerNotActiveException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+//imports for list files and file exception
+import java.nio.file.DirectoryStream;
+import java.nio.file.NoSuchFileException;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Implementation of the remote interface.
  *
@@ -31,17 +37,29 @@ public class FileImpl implements FileInterface {
     }
 
     @Override
-    public byte[] downloadFile(String fileName) {
+    public byte[] downloadFile(String fileName) throws FileServiceException {
         String ip = clientIp();
         System.out.println("Client " + ip + " requested file: '" + fileName + "'");
+
+        //nofile exception handling
+        if (fileName == null || fileName.isEmpty()) {
+            throw new FileServiceException("File name cannot be null or empty");
+        }
+
         try {
             byte[] data = Files.readAllBytes(Path.of(fileName));
             System.out.println("Served '" + fileName + "' (" + data.length + " bytes) to " + ip);
             return data;
+        } 
+        //nosuchfileexception handling and edited IOexception handling 
+        catch (NoSuchFileException e) {
+            System.out.println("FileImpl: download failed '" + fileName + "': " + e);
+            throw new FileServiceException("File not found: '" + fileName + "'");
         } catch (IOException e) {
-            System.out.println("FileImpl: could not read '" + fileName + "': " + e);
-            return null;
-        }
+            System.out.println("FileImpl: download failed '" + fileName + "': " + e);
+            throw new FileServiceException("Error reading file: '" + fileName + "': " + e.getMessage());
+        } 
+        
     }
 
     // add uploadfile method
@@ -75,4 +93,33 @@ public class FileImpl implements FileInterface {
         int total = uploadCount.incrementAndGet();
         System.out.println("Upload completed: '" + baseName + "' from " + clientIP + " (total uploads: " + total + ")");
     }
+
+    //list files method
+    @Override
+    public String[] listFiles() throws RemoteException {
+        List<String> names = new ArrayList<>();
+        addFiles(Path.of("."), "", names);          // files in the server folder
+        addFiles(UPLOAD_DIR, "uploads/", names);    // uploaded files
+        System.out.println("Client " + clientIp() + " requested the file list ("
+            + names.size() + " files)");
+        return names.toArray(new String[0]);
+    }
+
+    private void addFiles(Path dir, String prefix, List<String> names) throws RemoteException {
+        if (!Files.isDirectory(dir)) {
+            return;
+        }
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+            for (Path p : stream) {
+                String n = p.getFileName().toString();
+                // skip folders, compiled files, and temporary upload files
+                if (Files.isRegularFile(p) && !n.endsWith(".class") && !n.endsWith(".tmp")) {
+                    names.add(prefix + n);
+                }
+            }
+        } catch (IOException e) {
+            throw new RemoteException("Could not list files", e);
+        }
+    }
 }
+

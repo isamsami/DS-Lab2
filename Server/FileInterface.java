@@ -9,8 +9,11 @@ import java.rmi.RemoteException;
 public interface FileInterface extends Remote {
 
     /** Returns the contents of the named file, or null if it cannot be read. */
-    byte[] downloadFile(String fileName) throws RemoteException;
+    byte[] downloadFile(String fileName) throws RemoteException, FileServiceException;
 
     // add uploadfile method
     void uploadFile(String fileName, byte[] content) throws RemoteException;
+
+    //list files method
+    String[] listFiles() throws RemoteException;
 }

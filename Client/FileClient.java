@@ -41,7 +41,7 @@ public class FileClient {
             // Prompt the user for upload or download
             Scanner scanner = new Scanner(System.in);
              while (true) {
-                System.out.print("Choose: (1) download, (2) upload, (3) quit: ");
+                System.out.print("Choose: (1) download, (2) upload, (3) list files, (4) quit: ");
                 String choice = scanner.nextLine().trim();
 
                 if (choice.equals("1")) {
@@ -74,9 +74,16 @@ public class FileClient {
                     System.out.println("Upload complete: '" + p.getFileName() + "'");
                 
                 } else if (choice.equals("3")) {
+                    String[] files = fi.listFiles();
+                    System.out.println("Files on the server (" + files.length + "):");
+                    for (String f : files) {
+                        System.out.println("  " + f);
+                    }
+                } else if (choice.equals("4")) {
+                    System.out.println("Quitting...");
                     break;
                 } else {
-                    System.out.println("Invalid choice. Please enter 1, 2, or 3.");
+                    System.out.println("Invalid choice. Please enter 1, 2, 3, or 4.");
                 }
             }
         }catch (Exception e) {

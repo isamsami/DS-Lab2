@@ -12,5 +12,8 @@ public interface FileInterface extends Remote {
     byte[] downloadFile(String fileName) throws RemoteException;
 
     // add uploadfile method
-    void uploadFile(String fileName, byte[] content) throws RemoteException;
+    void uploadFile(String fileName, byte[] content) throws RemoteException, FileServiceException;
+
+      //list files method
+    String[] listFiles() throws RemoteException;
 }
